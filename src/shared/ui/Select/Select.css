@@ -1,0 +1,84 @@
+.ui-select-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  width: 100%;
+}
+
+.ui-select-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-main, #0f172a);
+}
+
+.ui-select-required-mark {
+  color: var(--color-error, #b91c1c);
+}
+
+.ui-select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.ui-select-control {
+  appearance: none;
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  padding: 0.625rem 2.25rem 0.625rem 0.875rem;
+  border-radius: var(--radius-md, 0.5rem);
+  border: 1px solid var(--color-border, #cbd5e1);
+  background-color: var(--color-surface, #ffffff);
+  color: var(--color-text-main, #0f172a);
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--transition-fast, 150ms), box-shadow var(--transition-fast, 150ms);
+}
+
+.ui-select-control:hover:not(:disabled) {
+  border-color: var(--color-border-hover, #94a3b8);
+}
+
+.ui-select-control:focus-visible {
+  border-color: var(--color-primary, #1d4ed8);
+  box-shadow: 0 0 0 3px var(--color-primary-ring, rgba(29, 78, 216, 0.25));
+}
+
+.ui-select-control:disabled {
+  background-color: var(--color-surface-subtle, #f1f5f9);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.ui-select-field--error .ui-select-control {
+  border-color: var(--color-error, #b91c1c);
+}
+
+.ui-select-field--error .ui-select-control:focus-visible {
+  box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.2);
+}
+
+.ui-select-chevron {
+  position: absolute;
+  right: 0.875rem;
+  font-size: 0.65rem;
+  color: var(--color-text-muted, #64748b);
+  pointer-events: none;
+}
+
+.ui-select-message {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.ui-select-message--error {
+  color: var(--color-error, #b91c1c);
+  font-weight: 500;
+}
+
+.ui-select-message--helper {
+  color: var(--color-text-muted, #64748b);
+}
