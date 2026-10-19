@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ZoneManagementView } from '../features/zones/index.js';
-import { Card } from '../shared/ui/index.js';
+import { OrderManagementView } from '../features/orders/index.js';
 
 type ActiveTab = 'zones' | 'orders';
 
@@ -35,20 +35,12 @@ export function App() {
           className={`app-nav__tab ${activeTab === 'orders' ? 'app-nav__tab--active' : ''}`}
           onClick={() => setActiveTab('orders')}
         >
-          Pedidos (Próximamente)
+          Pedidos (HU-PED-01)
         </button>
       </nav>
 
       {activeTab === 'zones' && <ZoneManagementView />}
-
-      {activeTab === 'orders' && (
-        <Card variant="outlined">
-          <h3>Módulo de Pedidos</h3>
-          <p style={{ color: 'var(--color-text-muted)', margin: 0 }}>
-            El módulo de pedidos se conectará con las zonas configuradas en el siguiente paso del Sprint 01.
-          </p>
-        </Card>
-      )}
+      {activeTab === 'orders' && <OrderManagementView />}
     </main>
   );
 }
