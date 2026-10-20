@@ -29,7 +29,7 @@ export class FetchHttpClient implements HttpClient {
   private readonly baseUrl: string;
 
   constructor(baseUrl?: string) {
-    const rawBaseUrl = baseUrl ?? import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
+    const rawBaseUrl = baseUrl ?? import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:3000';
     this.baseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
   }
 
