@@ -67,3 +67,7 @@ Cypress registra datos con prefijo E2E en la base de pruebas elegida, sin limpia
 ### Sonar y pre-merge
 
 `sonar-project.properties` define fuentes y pruebas frontend. El servidor/scanner debe configurarse externamente y el token nunca se incorpora a variables `VITE_*`. Guardar resultado, puerta de calidad y SHA analizado de ambos repositorios. No existe evidencia nueva de Sonar ni de Cypress en esta revisión. Consultar el [informe](docs/reviews/2026-10-20.md).
+
+## Flujo de ramas
+
+[main recibe las entregas aceptadas desde develop](docs/workflow/BRANCHING.md). Las ramas feature/fix se revisan primero contra develop.
