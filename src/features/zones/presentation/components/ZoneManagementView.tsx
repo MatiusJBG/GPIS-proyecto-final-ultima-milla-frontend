@@ -1,21 +1,23 @@
 import type { FC } from 'react';
+import type { ZoneRepository } from '../../domain/index.js';
 import { useZones } from '../hooks/useZones.js';
 import { ZoneForm } from './ZoneForm.js';
 import { ZoneList } from './ZoneList.js';
 import { Alert, Button, Card } from '../../../../shared/ui/index.js';
 import '../styles/zones.css';
 
-export const ZoneManagementView: FC = () => {
+export const ZoneManagementView: FC<{ repository: ZoneRepository }> = ({ repository }) => {
   const {
     zones,
     isLoading,
     isCreating,
     error,
+    loadError,
     successMessage,
     loadZones,
     createZone,
     clearFeedback,
-  } = useZones();
+  } = useZones(repository);
 
   return (
     <section className="zones-layout" aria-labelledby="zones-view-title">
@@ -63,7 +65,7 @@ export const ZoneManagementView: FC = () => {
             </span>
           </div>
 
-          <ZoneList zones={zones} isLoading={isLoading} />
+          {!loadError && <ZoneList zones={zones} isLoading={isLoading} />}
         </Card>
       </div>
     </section>

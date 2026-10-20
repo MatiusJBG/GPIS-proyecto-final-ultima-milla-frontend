@@ -1,11 +1,14 @@
-import type { FC } from 'react';
+import { useState, type FC, type FormEvent } from 'react';
+import type { OrderGateway, OrderFilters } from '../../domain/index.js';
+import type { ZoneRepository } from '../../../zones/domain/index.js';
 import { useOrders } from '../hooks/useOrders.js';
 import { OrderForm } from './OrderForm.js';
 import { OrderList } from './OrderList.js';
 import { Alert, Button, Card } from '../../../../shared/ui/index.js';
 import '../styles/orders.css';
 
-export const OrderManagementView: FC = () => {
+export const OrderManagementView: FC<{ orderGateway: OrderGateway; zoneRepository: ZoneRepository }> = ({ orderGateway, zoneRepository }) => {
+  const [draftFilters, setDraftFilters] = useState({ deliveryDate: '', zoneId: '' });
   const {
     orders,
     zones,
@@ -13,12 +16,22 @@ export const OrderManagementView: FC = () => {
     isLoadingOrders,
     isSubmitting,
     error,
+    ordersError,
+    setFilters,
     successMessage,
     loadZones,
     loadOrders,
     createOrder,
     clearFeedback,
-  } = useOrders();
+  } = useOrders(orderGateway, zoneRepository);
+
+  const applyFilters = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const selected: OrderFilters = {};
+    if (draftFilters.deliveryDate) selected.deliveryDate = draftFilters.deliveryDate;
+    if (draftFilters.zoneId) selected.zoneId = draftFilters.zoneId;
+    setFilters(selected);
+  };
 
   const handleRefresh = () => {
     void loadZones();
@@ -78,7 +91,22 @@ export const OrderManagementView: FC = () => {
             </span>
           </div>
 
-          <OrderList orders={orders} isLoading={isLoadingOrders} />
+          <form onSubmit={applyFilters} aria-label="Filtrar pedidos">
+            <label htmlFor="filter-date">Fecha de entrega</label>
+            <input id="filter-date" type="date" value={draftFilters.deliveryDate}
+              onChange={event => setDraftFilters(previous => ({ ...previous, deliveryDate: event.target.value }))} />
+            <label htmlFor="filter-zone">Zona</label>
+            <select id="filter-zone" value={draftFilters.zoneId}
+              onChange={event => setDraftFilters(previous => ({ ...previous, zoneId: event.target.value }))}>
+              <option value="">Todas las zonas</option>
+              {zones.map(zone => <option key={zone.id} value={zone.id}>{zone.name}</option>)}
+            </select>
+            <Button type="submit" disabled={isLoadingOrders}>Filtrar</Button>
+            <Button type="button" variant="secondary" onClick={() => {
+              setDraftFilters({ deliveryDate: '', zoneId: '' }); setFilters({});
+            }}>Limpiar filtros</Button>
+          </form>
+          {!ordersError && <OrderList orders={orders} isLoading={isLoadingOrders} />}
         </Card>
       </div>
     </section>

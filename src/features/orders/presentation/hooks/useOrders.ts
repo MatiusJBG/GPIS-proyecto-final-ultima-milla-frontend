@@ -1,102 +1,54 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Zone } from '../../../zones/domain/index.js';
+import { useCallback, useMemo, useState } from 'react';
+import type { ZoneRepository } from '../../../zones/domain/index.js';
 import { GetZonesUseCase } from '../../../zones/application/index.js';
-import { defaultZoneRepository } from '../../../zones/infrastructure/http/index.js';
-import type { Order, CreateOrderInput } from '../../domain/index.js';
+import type { OrderGateway, CreateOrderInput, OrderFilters } from '../../domain/index.js';
 import { CreateOrderUseCase, GetOrdersUseCase } from '../../application/index.js';
-import { defaultOrderGateway } from '../../infrastructure/http/index.js';
+import { useAsyncList } from '../../../../shared/ui/hooks/useAsyncList.js';
 
-export function useOrders(
-  orderGateway = defaultOrderGateway,
-  zoneRepository = defaultZoneRepository,
-) {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [zones, setZones] = useState<Zone[]>([]);
-  const [isLoadingZones, setIsLoadingZones] = useState<boolean>(true);
-  const [isLoadingOrders, setIsLoadingOrders] = useState<boolean>(false);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+export function useOrders(orderGateway: OrderGateway, zoneRepository: ZoneRepository) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [writeError, setWriteError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [filters, setFilters] = useState<OrderFilters>({});
+  const getZones = useMemo(() => new GetZonesUseCase(zoneRepository), [zoneRepository]);
+  const registerOrder = useMemo(() => new CreateOrderUseCase(orderGateway), [orderGateway]);
+  const getOrders = useMemo(() => new GetOrdersUseCase(orderGateway), [orderGateway]);
+  const fetchZones = useCallback(() => getZones.execute(), [getZones]);
+  const fetchOrders = useCallback(() => getOrders.execute(filters), [getOrders, filters]);
+  const zoneList = useAsyncList(fetchZones);
+  const orderList = useAsyncList(fetchOrders);
+  const { items: zones } = zoneList;
+  const { updateItems } = orderList;
 
-  const getZonesUseCase = useMemo(() => new GetZonesUseCase(zoneRepository), [zoneRepository]);
-  const createOrderUseCase = useMemo(() => new CreateOrderUseCase(orderGateway), [orderGateway]);
-  const getOrdersUseCase = useMemo(() => new GetOrdersUseCase(orderGateway), [orderGateway]);
-
-  const loadZones = useCallback(async () => {
-    setIsLoadingZones(true);
+  const createOrder = useCallback(async (input: CreateOrderInput): Promise<boolean> => {
+    setIsSubmitting(true);
+    setWriteError(null);
+    setSuccessMessage(null);
     try {
-      const data = await getZonesUseCase.execute();
-      setZones(data);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error al cargar las zonas para pedidos';
-      setError(message);
-    } finally {
-      setIsLoadingZones(false);
-    }
-  }, [getZonesUseCase]);
-
-  const loadOrders = useCallback(async () => {
-    setIsLoadingOrders(true);
-    try {
-      const data = await getOrdersUseCase.execute();
-      setOrders(data);
-    } catch {
-      // Si el endpoint de pedidos aún no está implementado o falla, mantenemos lista previa
-    } finally {
-      setIsLoadingOrders(false);
-    }
-  }, [getOrdersUseCase]);
-
-  const createOrder = useCallback(
-    async (input: CreateOrderInput): Promise<boolean> => {
-      setIsSubmitting(true);
-      setError(null);
-      setSuccessMessage(null);
-      try {
-        const createdOrder = await createOrderUseCase.execute(input);
-
-        // Asociar nombre de la zona localmente para visualización inmediata si existe
-        const matchedZone = zones.find((z) => z.id === createdOrder.zoneId);
-        const enrichedOrder: Order = {
-          ...createdOrder,
-          zoneName: matchedZone ? matchedZone.name : createdOrder.zoneName,
-        };
-
-        setOrders((prev) => [enrichedOrder, ...prev.filter((o) => o.id !== enrichedOrder.id)]);
-        setSuccessMessage(`Pedido para "${enrichedOrder.deliveryAddress}" creado exitosamente.`);
-        return true;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Error al registrar el pedido';
-        setError(message);
-        return false;
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-    [createOrderUseCase, zones],
-  );
+      const created = await registerOrder.execute(input);
+      const enriched = { ...created, zoneName: zones.find(zone => zone.id === created.zoneId)?.name };
+      updateItems(previous => {
+        if ((filters.zoneId && created.zoneId !== filters.zoneId) ||
+            (filters.deliveryDate && created.deliveryDate !== filters.deliveryDate)) return previous;
+        return [enriched, ...previous.filter(order => order.id !== created.id)];
+      });
+      setSuccessMessage(`Pedido para "${created.deliveryAddress}" creado exitosamente.`);
+      return true;
+    } catch (failure) {
+      setWriteError(failure instanceof Error ? failure.message : 'Error al registrar el pedido');
+      return false;
+    } finally { setIsSubmitting(false); }
+  }, [registerOrder, zones, filters, updateItems]);
 
   const clearFeedback = useCallback(() => {
-    setError(null);
+    setWriteError(null);
     setSuccessMessage(null);
   }, []);
 
-  useEffect(() => {
-    void loadZones();
-    void loadOrders();
-  }, [loadZones, loadOrders]);
-
   return {
-    orders,
-    zones,
-    isLoadingZones,
-    isLoadingOrders,
-    isSubmitting,
-    error,
-    successMessage,
-    loadZones,
-    loadOrders,
-    createOrder,
-    clearFeedback,
+    orders: orderList.items, zones, filters, setFilters,
+    isLoadingZones: zoneList.isLoading, isLoadingOrders: orderList.isLoading, isSubmitting,
+    error: writeError ?? zoneList.error ?? orderList.error, ordersError: orderList.error,
+    successMessage, loadZones: zoneList.refresh, loadOrders: orderList.refresh, createOrder, clearFeedback,
   };
 }

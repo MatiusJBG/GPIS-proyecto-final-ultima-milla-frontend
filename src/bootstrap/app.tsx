@@ -2,6 +2,14 @@ import { useState } from 'react';
 import { ZoneManagementView } from '../features/zones/index.js';
 import { OrderManagementView } from '../features/orders/index.js';
 
+import { FetchHttpClient } from '../shared/infrastructure/http/httpClient.js';
+import { HttpZoneRepository } from '../features/zones/infrastructure/http/httpZoneRepository.js';
+import { HttpOrderGateway } from '../features/orders/infrastructure/http/httpOrderGateway.js';
+
+const httpClient = new FetchHttpClient();
+const zoneRepository = new HttpZoneRepository(httpClient);
+const orderGateway = new HttpOrderGateway(httpClient);
+
 type ActiveTab = 'zones' | 'orders';
 
 export function App() {
@@ -39,8 +47,8 @@ export function App() {
         </button>
       </nav>
 
-      {activeTab === 'zones' && <ZoneManagementView />}
-      {activeTab === 'orders' && <OrderManagementView />}
+      {activeTab === 'zones' && <ZoneManagementView repository={zoneRepository} />}
+      {activeTab === 'orders' && <OrderManagementView orderGateway={orderGateway} zoneRepository={zoneRepository} />}
     </main>
   );
 }
