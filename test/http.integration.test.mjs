@@ -2,12 +2,15 @@ import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
 import { createServer as createHttpServer } from 'node:http';
 import { URL } from 'node:url';
+import { setTimeout as delay } from 'node:timers/promises';
 import { createServer } from 'vite';
 
 let vite;
 let server;
 let client;
 let HttpError;
+let FetchHttpClient;
+let baseUrl;
 let zones;
 let orders;
 let reply;
@@ -21,13 +24,17 @@ before(async () => {
     let body = '';
     for await (const chunk of request) body += chunk;
     received = { url: request.url, method: request.method, contentType: request.headers['content-type'], body: body ? JSON.parse(body) : undefined };
-    response.writeHead(reply.status ?? 200, { 'Content-Type': reply.type ?? 'application/json' });
-    response.end(typeof reply.body === 'string' ? reply.body : JSON.stringify(reply.body));
+    const current = reply;
+    if (current.delay) await delay(current.delay);
+    response.writeHead(current.status ?? 200, { 'Content-Type': current.type ?? 'application/json' });
+    response.end(typeof current.body === 'string' ? current.body : JSON.stringify(current.body));
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const http = await vite.ssrLoadModule('/src/shared/infrastructure/http/httpClient.ts');
   HttpError = http.HttpError;
-  client = new http.FetchHttpClient(`http://127.0.0.1:${server.address().port}`);
+  FetchHttpClient = http.FetchHttpClient;
+  baseUrl = `http://127.0.0.1:${server.address().port}`;
+  client = new FetchHttpClient(baseUrl);
   const { HttpZoneRepository } = await vite.ssrLoadModule('/src/features/zones/infrastructure/http/httpZoneRepository.ts');
   const { HttpOrderGateway } = await vite.ssrLoadModule('/src/features/orders/infrastructure/http/httpOrderGateway.ts');
   zones = new HttpZoneRepository(client);
@@ -92,4 +99,22 @@ test('query filters use the API parameter names', async () => {
   const url = new URL(received.url, 'http://localhost');
   assert.equal(url.searchParams.get('deliveryDate'), '2099-10-20');
   assert.equal(url.searchParams.get('zoneId'), zone.id);
+});
+
+test('slow requests time out instead of leaving the UI loading indefinitely', async () => {
+  reply = { delay: 150, body: { items: [] } };
+  const bounded = new FetchHttpClient(baseUrl, 20);
+  await assert.rejects(bounded.get('/zones'), error => error instanceof HttpError && error.statusText === 'TimeoutError');
+});
+
+test('a timed out write reports an unknown outcome and is not retried', async () => {
+  reply = { delay: 150, status: 201, body: order };
+  let requests = 0;
+  const listener = () => { ++requests; };
+  server.on('request', listener);
+  try {
+    const bounded = new FetchHttpClient(baseUrl, 20);
+    await assert.rejects(bounded.post('/orders', order), /confirmación.*listado/i);
+    assert.equal(requests, 1);
+  } finally { server.off('request', listener); }
 });
