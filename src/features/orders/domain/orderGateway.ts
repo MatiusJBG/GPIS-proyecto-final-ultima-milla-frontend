@@ -1,6 +1,6 @@
-import type { Order, CreateOrderInput } from './order.js';
+import type { Order, CreateOrderInput, OrderFilters } from './order.js';
 
 export interface OrderGateway {
   create(input: CreateOrderInput): Promise<Order>;
-  getAll(): Promise<Order[]>;
+  getAll(filters?: OrderFilters): Promise<Order[]>;
 }

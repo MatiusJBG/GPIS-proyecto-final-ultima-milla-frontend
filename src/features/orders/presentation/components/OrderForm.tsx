@@ -118,7 +118,6 @@ export const OrderForm: FC<OrderFormProps> = ({
         helperText="Ingresa la dirección detallada de destino."
         isRequired
         disabled={isSubmitting || hasNoZones}
-        maxLength={150}
         autoComplete="street-address"
       />
 

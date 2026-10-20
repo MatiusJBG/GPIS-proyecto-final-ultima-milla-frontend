@@ -56,7 +56,6 @@ export const ZoneForm: FC<ZoneFormProps> = ({ onSubmit, isSubmitting = false }) 
         helperText="Ingresa un nombre representativo para el área de distribución."
         isRequired
         disabled={isSubmitting}
-        maxLength={50}
         autoComplete="off"
       />
 

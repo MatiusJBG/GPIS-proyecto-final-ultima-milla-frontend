@@ -71,11 +71,12 @@ export class FetchHttpClient implements HttpClient {
     }
 
     if (!response.ok) {
-      let errorDetails: unknown;
+      const errorBody = await response.text();
+      let errorDetails: unknown = errorBody;
       try {
-        errorDetails = await response.json();
+        errorDetails = JSON.parse(errorBody);
       } catch {
-        errorDetails = await response.text();
+        // Preserve text/HTML proxy errors without reading the body twice.
       }
 
       throw new HttpError(response.status, response.statusText, errorDetails);
