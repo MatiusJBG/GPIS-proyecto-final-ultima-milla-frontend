@@ -1,0 +1,11 @@
+{
+  "case": "CP-015",
+  "zoneName": "E2E-1792542517899",
+  "address": "Entrega E2E-1792542517899",
+  "deliveryDate": "2026-10-22",
+  "deliveryTime": "14:30",
+  "orderId": "048136b1-674a-465b-b325-8710153d1bcb",
+  "zoneId": "0738498a-9e5a-4b5d-adcf-f796c5761145",
+  "expectedStatus": "pendiente",
+  "actualStatus": "pendiente"
+}
