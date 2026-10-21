@@ -19,7 +19,7 @@ const zone = { id: 'a0000000-0000-4000-8000-000000000001', name: 'Centro', creat
 const order = { id: 'b0000000-0000-4000-8000-000000000001', zoneId: zone.id, deliveryAddress: 'A', deliveryDate: '2099-10-20', deliveryTime: '14:30', status: 'pendiente', createdAt: zone.createdAt, updatedAt: zone.updatedAt };
 
 before(async () => {
-  vite = await createServer({ server: { middlewareMode: true }, appType: 'custom' });
+  vite = await createServer({ server: { middlewareMode: true, hmr: false }, appType: 'custom' });
   server = createHttpServer(async (request, response) => {
     let body = '';
     for await (const chunk of request) body += chunk;

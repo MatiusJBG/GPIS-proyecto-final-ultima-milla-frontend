@@ -7,7 +7,7 @@ let validateOrder;
 let validateZoneName;
 const input = { zoneId: 'a0000000-0000-4000-8000-000000000001', deliveryAddress: 'A', deliveryDate: '2099-10-20', deliveryTime: '14:30' };
 before(async () => {
-  vite = await createServer({ server: { middlewareMode: true }, appType: 'custom' });
+  vite = await createServer({ server: { middlewareMode: true, hmr: false }, appType: 'custom' });
   ({ validateOrder } = await vite.ssrLoadModule('/src/features/orders/domain/order.ts'));
   ({ validateZoneName } = await vite.ssrLoadModule('/src/features/zones/domain/zone.ts'));
 });

@@ -3,7 +3,10 @@ describe('CP-015: zonas y pedidos contra API y PostgreSQL reales', () => {
     const zoneName = `E2E-${Date.now()}`;
     const address = `Entrega ${zoneName}`;
     // A future local day avoids time-zone boundaries and the SQL past-date rule.
-    const deliveryDate = '2099-10-20';
+    const tomorrow = new Date(Date.now() + 2 * 86_400_000);
+    const calendar = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit' });
+    const deliveryDate = calendar.format(tomorrow);
+    const otherDate = calendar.format(new Date(tomorrow.getTime() + 86_400_000));
     const apiUrl = Cypress.env('apiUrl');
     cy.request(`${apiUrl}/health`).its('body.status').should('eq', 'ok');
     cy.intercept('POST', `${apiUrl}/zones`).as('createZone');
@@ -23,6 +26,7 @@ describe('CP-015: zonas y pedidos contra API y PostgreSQL reales', () => {
     cy.wait('@createOrder').then(({ response }) => {
       expect(response.statusCode).to.eq(201);
       expect(response.body.status).to.eq('pendiente');
+      cy.task('recordAcceptance', { case: 'CP-015', zoneName, address, deliveryDate, deliveryTime: '14:30', orderId: response.body.id, zoneId: response.body.zoneId, expectedStatus: 'pendiente', actualStatus: response.body.status });
       cy.request(`${apiUrl}/orders/${response.body.id}`).its('body.deliveryAddress').should('eq', address);
     });
     cy.reload();
@@ -32,7 +36,7 @@ describe('CP-015: zonas y pedidos contra API y PostgreSQL reales', () => {
     cy.get('#filter-date').type(deliveryDate);
     cy.contains('button', /^Filtrar$/).click();
     cy.get('table').contains(address).should('be.visible');
-    cy.get('#filter-date').clear().type('2099-10-21');
+    cy.get('#filter-date').clear().type(otherDate);
     cy.contains('button', /^Filtrar$/).click();
     cy.contains('No hay pedidos registrados').should('be.visible');
     cy.contains('button', 'Limpiar filtros').click();
