@@ -40,7 +40,7 @@ export const ZoneManagementView: FC<{ repository: ZoneRepository }> = ({ reposit
       </header>
 
       {error && (
-        <Alert type="error" title="Atención" onClose={clearFeedback}>
+        <Alert type="error" title="Atención" onClose={loadError ? undefined : clearFeedback}>
           {error}
         </Alert>
       )}

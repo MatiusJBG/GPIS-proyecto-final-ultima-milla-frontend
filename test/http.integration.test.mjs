@@ -25,8 +25,12 @@ before(async () => {
     for await (const chunk of request) body += chunk;
     received = { url: request.url, method: request.method, contentType: request.headers['content-type'], body: body ? JSON.parse(body) : undefined };
     const current = reply;
+    if (current.flushHeaders) {
+      response.writeHead(current.status ?? 200, { 'Content-Type': 'application/json' });
+      response.flushHeaders();
+    }
     if (current.delay) await delay(current.delay);
-    response.writeHead(current.status ?? 200, { 'Content-Type': current.type ?? 'application/json' });
+    if (!current.flushHeaders) response.writeHead(current.status ?? 200, { 'Content-Type': current.type ?? 'application/json' });
     response.end(typeof current.body === 'string' ? current.body : JSON.stringify(current.body));
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -118,3 +122,17 @@ test('a timed out write reports an unknown outcome and is not retried', async ()
     assert.equal(requests, 1);
   } finally { server.off('request', listener); }
 });
+
+for (const status of [201, 503]) {
+  test(`timeout reading the POST body after HTTP ${status} preserves the unknown outcome warning`, async () => {
+    reply = { flushHeaders: true, delay: 200, status, body: order };
+    let requests = 0;
+    const listener = () => { ++requests; };
+    server.on('request', listener);
+    try {
+      const bounded = new FetchHttpClient(baseUrl, 60);
+      await assert.rejects(bounded.post('/orders', order), error => error instanceof HttpError && error.statusText === 'TimeoutError' && /confirmación.*listado/i.test(error.message));
+      assert.equal(requests, 1);
+    } finally { server.off('request', listener); }
+  });
+}

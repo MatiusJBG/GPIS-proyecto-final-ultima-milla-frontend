@@ -10,7 +10,7 @@ export function useZones(repository: ZoneRepository) {
   const getZones = useMemo(() => new GetZonesUseCase(repository), [repository]);
   const registerZone = useMemo(() => new CreateZoneUseCase(repository), [repository]);
   const load = useCallback(() => getZones.execute(), [getZones]);
-  const { items: zones, isLoading, error: loadError, refresh: loadZones, updateItems, clearError } = useAsyncList(load);
+  const { items: zones, isLoading, error: loadError, refresh: loadZones, updateItems } = useAsyncList(load);
 
   const createZone = useCallback(async (name: string): Promise<boolean> => {
     setIsCreating(true);
@@ -30,8 +30,7 @@ export function useZones(repository: ZoneRepository) {
   const clearFeedback = useCallback(() => {
     setWriteError(null);
     setSuccessMessage(null);
-    clearError();
-  }, [clearError]);
+  }, []);
 
   return { zones, isLoading, isCreating, error: writeError ?? loadError, loadError, successMessage, loadZones, createZone, clearFeedback };
 }

@@ -68,11 +68,35 @@ export class FetchHttpClient implements HttpClient {
       fetchConfig.body = body;
     }
 
-    let response: Response;
     try {
-      response = await fetch(url, fetchConfig);
+      const response = await fetch(url, fetchConfig);
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        let errorDetails: unknown = errorBody;
+        try {
+          errorDetails = JSON.parse(errorBody);
+        } catch {
+          // Preserve text/HTML proxy errors without reading the body twice.
+        }
+
+        throw new HttpError(response.status, response.statusText, errorDetails);
+      }
+
+      if (response.status === 204) {
+        return undefined as unknown as T;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return (await response.json()) as T;
+      }
+
+      return (await response.text()) as unknown as T;
     } catch (networkError) {
-      if (networkError instanceof Error && networkError.name === 'TimeoutError') {
+      if (networkError instanceof HttpError) throw networkError;
+      if ((networkError instanceof Error && networkError.name === 'TimeoutError') ||
+          (fetchConfig.signal?.aborted && fetchConfig.signal.reason instanceof Error && fetchConfig.signal.reason.name === 'TimeoutError')) {
         const uncertainWrite = init.method !== 'GET';
         const message = uncertainWrite
           ? 'No se recibió confirmación del servidor. Consulta el listado antes de volver a registrar la operación.'
@@ -82,29 +106,6 @@ export class FetchHttpClient implements HttpClient {
       const message = networkError instanceof Error ? networkError.message : 'Error de red';
       throw new HttpError(0, 'NetworkError', { message: `No se pudo conectar con el servidor: ${message}` });
     }
-
-    if (!response.ok) {
-      const errorBody = await response.text();
-      let errorDetails: unknown = errorBody;
-      try {
-        errorDetails = JSON.parse(errorBody);
-      } catch {
-        // Preserve text/HTML proxy errors without reading the body twice.
-      }
-
-      throw new HttpError(response.status, response.statusText, errorDetails);
-    }
-
-    if (response.status === 204) {
-      return undefined as unknown as T;
-    }
-
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      return (await response.json()) as T;
-    }
-
-    return (await response.text()) as unknown as T;
   }
 
   public get<T>(endpoint: string, options?: RequestOptions): Promise<T> {

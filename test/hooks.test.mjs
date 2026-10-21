@@ -10,6 +10,7 @@ let createRoot;
 let useZones;
 let useOrders;
 let OrderManagementView;
+let ZoneManagementView;
 const zone = { id: 'a0000000-0000-4000-8000-000000000001', name: 'Centro', createdAt: '2026-10-20T10:00:00.000Z', updatedAt: '2026-10-20T10:00:00.000Z' };
 function deferred() {
   let resolve;
@@ -35,6 +36,25 @@ before(async () => {
   ({ useZones } = await vite.ssrLoadModule('/src/features/zones/presentation/hooks/useZones.ts'));
   ({ useOrders } = await vite.ssrLoadModule('/src/features/orders/presentation/hooks/useOrders.ts'));
   ({ OrderManagementView } = await vite.ssrLoadModule('/src/features/orders/presentation/components/OrderManagementView.tsx'));
+  ({ ZoneManagementView } = await vite.ssrLoadModule('/src/features/zones/presentation/components/ZoneManagementView.tsx'));
+});
+
+test('closing query feedback never turns a failed zones query into an empty success', async () => {
+  let fail = true;
+  const repository = { getAll: async () => { if (fail) throw new Error('API no disponible'); return []; } };
+  const view = await mount(() => null, () => createElement(ZoneManagementView, { repository }));
+  try {
+    assert.match(view.container.textContent, /API no disponible/);
+    const close = view.container.querySelector('.ui-alert__close');
+    if (close) await act(async () => { close.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })); });
+    assert.doesNotMatch(view.container.textContent, /No hay zonas registradas/);
+    assert.match(view.container.textContent, /API no disponible/);
+    fail = false;
+    await act(async () => {
+      view.container.querySelector('[aria-label="Refrescar lista de zonas"]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+    });
+    assert.match(view.container.textContent, /No hay zonas registradas/);
+  } finally { await view.close(); }
 });
 
 test('query failures render feedback without claiming that no orders exist', async () => {
