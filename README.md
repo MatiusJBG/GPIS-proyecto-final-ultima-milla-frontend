@@ -79,3 +79,5 @@ La revisión posterior completa CI con persistencia real y conserva los resultad
 ### Sistema aislado reproducible
 
 Después de `npm ci` y `npm run build` en ambos clones, verificar y extraer `.ci/database-package.zip` del backend en una carpeta temporal (`python -m zipfile -e ...`). Configurar `BACKEND_DIR` (ruta absoluta), `BACKEND_COMMIT` (SHA completo de `.ci/integration.json`) y `DATABASE_PACKAGE_DIR` (paquete extraído); ejecutar `npm run test:e2e:system` desde frontend con Docker activo. No es obligatorio que los clones sean hermanos. El comando inicia API, Vite y PostgreSQL, ejecuta Cypress sin respuestas simuladas, guarda JSON/JUnit y elimina su base temporal. Rechaza resultados antiguos o ausentes. La URL pública de API usa `Cypress.expose`, conforme a Cypress 16; nunca colocar secretos allí.
+
+Estado remoto actualizado: `main` es la rama predeterminada y los commits están publicados en `fix/sprint-01-review`. El PR hacia `develop` está en borrador. Consultar `docs/evidence/2026-10-20-closure.md` para los bloqueos remotos reales.
