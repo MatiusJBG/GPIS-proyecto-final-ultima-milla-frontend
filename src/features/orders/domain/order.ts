@@ -1,4 +1,9 @@
-export type OrderStatus = 'pendiente' | 'en_camino' | 'entregado' | 'cancelado' | string;
+export type OrderStatus = 'pendiente' | 'asignado_a_ruta' | 'recogido' | 'en_camino' | 'entregado';
+
+export interface OrderFilters {
+  zoneId?: string;
+  deliveryDate?: string;
+}
 
 export interface Order {
   id: string;
@@ -43,25 +48,22 @@ export function validateOrder(input: CreateOrderInput): OrderValidationResult {
   const errors: OrderValidationErrors = {};
 
   const trimmedZoneId = input.zoneId ? input.zoneId.trim() : '';
-  if (!trimmedZoneId) {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(trimmedZoneId)) {
     errors.zoneId = 'Debes seleccionar una zona de cobertura obligatoriamente.';
   }
 
   const trimmedAddress = input.deliveryAddress ? input.deliveryAddress.trim() : '';
   if (!trimmedAddress) {
     errors.deliveryAddress = 'La dirección de entrega no puede estar vacía.';
-  } else if (trimmedAddress.length < 5) {
-    errors.deliveryAddress = 'La dirección de entrega debe ser descriptiva (mínimo 5 caracteres).';
-  } else if (trimmedAddress.length > 150) {
-    errors.deliveryAddress = 'La dirección de entrega no puede exceder 150 caracteres.';
+
   }
 
   const datePattern = /^\d{4}-\d{2}-\d{2}$/;
   if (!input.deliveryDate || !datePattern.test(input.deliveryDate)) {
     errors.deliveryDate = 'La fecha de entrega debe tener un formato válido (AAAA-MM-DD).';
   } else {
-    const parsedDate = new Date(`${input.deliveryDate}T00:00:00`);
-    if (isNaN(parsedDate.getTime())) {
+    const parsedDate = new Date(`${input.deliveryDate}T00:00:00.000Z`);
+    if (input.deliveryDate.startsWith('0000-') || !Number.isFinite(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== input.deliveryDate) {
       errors.deliveryDate = 'La fecha ingresada no es una fecha válida en el calendario.';
     }
   }

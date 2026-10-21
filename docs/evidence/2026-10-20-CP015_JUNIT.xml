@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="3.613" tests="2" failures="0">
+  <testsuite name="Root Suite" timestamp="2026-10-21T00:28:37" tests="0" file="cypress\e2e\zones-orders.cy.js" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="CP-015: zonas y pedidos contra API y PostgreSQL reales" timestamp="2026-10-21T00:28:37" tests="2" time="3.612" failures="0">
+    <testcase name="CP-015: zonas y pedidos contra API y PostgreSQL reales registra, recarga y filtra un pedido persistido" time="3.261" classname="registra, recarga y filtra un pedido persistido">
+    </testcase>
+    <testcase name="CP-015: zonas y pedidos contra API y PostgreSQL reales muestra el error de validación de una zona vacía" time="0.310" classname="muestra el error de validación de una zona vacía">
+    </testcase>
+  </testsuite>
+</testsuites>

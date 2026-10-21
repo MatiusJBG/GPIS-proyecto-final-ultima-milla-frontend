@@ -35,19 +35,5 @@ export function validateZoneName(name: string): ZoneValidationResult {
     };
   }
 
-  if (trimmed.length < 2) {
-    return {
-      isValid: false,
-      error: 'El nombre de la zona debe tener al menos 2 caracteres.',
-    };
-  }
-
-  if (trimmed.length > 50) {
-    return {
-      isValid: false,
-      error: 'El nombre de la zona no puede exceder 50 caracteres.',
-    };
-  }
-
   return { isValid: true };
 }

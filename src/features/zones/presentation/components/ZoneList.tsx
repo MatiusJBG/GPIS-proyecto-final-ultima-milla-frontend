@@ -11,7 +11,7 @@ function formatDate(isoDateString?: string): string {
   if (!isoDateString) return '—';
   try {
     const date = new Date(isoDateString);
-    if (isNaN(date.getTime())) return isoDateString;
+    if (Number.isNaN(date.getTime())) return isoDateString;
     return new Intl.DateTimeFormat('es-ES', {
       dateStyle: 'medium',
       timeStyle: 'short',
@@ -24,10 +24,10 @@ function formatDate(isoDateString?: string): string {
 export const ZoneList: FC<ZoneListProps> = ({ zones, isLoading }) => {
   if (isLoading && zones.length === 0) {
     return (
-      <div className="zones-loading-container" role="status">
+      <output className="zones-loading-container">
         <Spinner size="lg" label="Cargando listado de zonas..." />
         <p>Obteniendo zonas disponibles...</p>
-      </div>
+      </output>
     );
   }
 

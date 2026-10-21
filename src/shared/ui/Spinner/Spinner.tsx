@@ -8,7 +8,7 @@ export interface SpinnerProps {
 
 export const Spinner: FC<SpinnerProps> = ({ size = 'md', label = 'Cargando...' }) => {
   return (
-    <span className={`ui-spinner-wrapper ui-spinner--${size}`} role="status">
+    <output className={`ui-spinner-wrapper ui-spinner--${size}`}>
       <svg
         className="ui-spinner-svg"
         viewBox="0 0 24 24"
@@ -33,6 +33,6 @@ export const Spinner: FC<SpinnerProps> = ({ size = 'md', label = 'Cargando...' }
         />
       </svg>
       <span className="sr-only">{label}</span>
-    </span>
+    </output>
   );
 };

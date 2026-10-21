@@ -25,11 +25,18 @@ export interface HttpClient {
   delete<T>(endpoint: string, options?: RequestOptions): Promise<T>;
 }
 
+function isTimeout(error: unknown): boolean {
+  return error instanceof Error && error.name === 'TimeoutError';
+}
+
 export class FetchHttpClient implements HttpClient {
   private readonly baseUrl: string;
 
-  constructor(baseUrl?: string) {
-    const rawBaseUrl = baseUrl ?? import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
+  constructor(baseUrl?: string, private readonly timeoutMs = 15_000) {
+    if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 2_147_483_647) {
+      throw new Error('El timeout HTTP debe ser un entero positivo en milisegundos.');
+    }
+    const rawBaseUrl = baseUrl ?? import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:3000';
     this.baseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
   }
 
@@ -38,12 +45,25 @@ export class FetchHttpClient implements HttpClient {
     return `${this.baseUrl}${cleanEndpoint}`;
   }
 
+  private async readResponse<T>(response: Response): Promise<T> {
+    if (!response.ok) {
+      const text = await response.text();
+      let details: unknown = text;
+      try { details = JSON.parse(text); } catch { /* Preserve text/HTML proxy errors. */ }
+      throw new HttpError(response.status, response.statusText, details);
+    }
+    if (response.status === 204) return undefined as T;
+    return response.headers.get('content-type')?.includes('application/json')
+      ? await response.json() as T
+      : await response.text() as T;
+  }
+
   private async request<T>(endpoint: string, init: RequestOptions = {}): Promise<T> {
     const url = this.buildUrl(endpoint);
 
     const headers: Record<string, string> = {
       Accept: 'application/json',
-      ...(init.headers ?? {}),
+      ...init.headers,
     };
 
     let body = init.body;
@@ -56,41 +76,32 @@ export class FetchHttpClient implements HttpClient {
     const fetchConfig: RequestInit = {
       ...restInit,
       headers,
+      signal: init.signal
+        ? AbortSignal.any([init.signal, AbortSignal.timeout(this.timeoutMs)])
+        : AbortSignal.timeout(this.timeoutMs),
     };
 
     if (body !== undefined) {
       fetchConfig.body = body;
     }
 
-    let response: Response;
     try {
-      response = await fetch(url, fetchConfig);
+      const response = await fetch(url, fetchConfig);
+
+      return await this.readResponse<T>(response);
     } catch (networkError) {
+      if (networkError instanceof HttpError) throw networkError;
+      if (isTimeout(networkError) ||
+          (fetchConfig.signal?.aborted && isTimeout(fetchConfig.signal.reason))) {
+        const uncertainWrite = init.method !== 'GET';
+        const message = uncertainWrite
+          ? 'No se recibió confirmación del servidor. Consulta el listado antes de volver a registrar la operación.'
+          : 'El servidor superó el tiempo de espera. Intenta consultar nuevamente.';
+        throw new HttpError(0, 'TimeoutError', { message });
+      }
       const message = networkError instanceof Error ? networkError.message : 'Error de red';
       throw new HttpError(0, 'NetworkError', { message: `No se pudo conectar con el servidor: ${message}` });
     }
-
-    if (!response.ok) {
-      let errorDetails: unknown;
-      try {
-        errorDetails = await response.json();
-      } catch {
-        errorDetails = await response.text();
-      }
-
-      throw new HttpError(response.status, response.statusText, errorDetails);
-    }
-
-    if (response.status === 204) {
-      return undefined as unknown as T;
-    }
-
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      return (await response.json()) as T;
-    }
-
-    return (await response.text()) as unknown as T;
   }
 
   public get<T>(endpoint: string, options?: RequestOptions): Promise<T> {

@@ -14,10 +14,11 @@ export const Alert: FC<AlertProps> = ({
   children,
   onClose,
 }) => {
+  const Container = type === 'error' ? 'div' : 'output';
   return (
-    <div
+    <Container
       className={`ui-alert ui-alert--${type}`}
-      role={type === 'error' ? 'alert' : 'status'}
+      role={type === 'error' ? 'alert' : undefined}
       aria-live="polite"
     >
       <div className="ui-alert__icon" aria-hidden="true">
@@ -42,6 +43,6 @@ export const Alert: FC<AlertProps> = ({
           ×
         </button>
       )}
-    </div>
+    </Container>
   );
 };

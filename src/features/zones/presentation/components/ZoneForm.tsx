@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type FC } from 'react';
+import { useState, type SubmitEvent, type FC } from 'react';
 import { validateZoneName } from '../../domain/index.js';
 import { Button, TextInput } from '../../../../shared/ui/index.js';
 
@@ -20,7 +20,7 @@ export const ZoneForm: FC<ZoneFormProps> = ({ onSubmit, isSubmitting = false }) 
     }
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setTouched(true);
 
@@ -56,7 +56,6 @@ export const ZoneForm: FC<ZoneFormProps> = ({ onSubmit, isSubmitting = false }) 
         helperText="Ingresa un nombre representativo para el área de distribución."
         isRequired
         disabled={isSubmitting}
-        maxLength={50}
         autoComplete="off"
       />
 
