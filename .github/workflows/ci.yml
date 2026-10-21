@@ -27,8 +27,8 @@ jobs:
         run: npm run lint
       - name: Build
         run: npm run build
-      - name: HTTP and DOM regressions
-        run: npm test
+      - name: HTTP and DOM regressions with measured coverage
+        run: npm run test:coverage
   system:
     runs-on: ubuntu-latest
     timeout-minutes: 20

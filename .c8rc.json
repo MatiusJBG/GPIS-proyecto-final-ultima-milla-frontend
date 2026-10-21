@@ -1,0 +1,12 @@
+{
+  "all": true,
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "reporter": [
+    "text",
+    "lcov",
+    "json-summary"
+  ]
+}

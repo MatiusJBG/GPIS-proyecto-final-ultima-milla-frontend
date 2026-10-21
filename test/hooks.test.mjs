@@ -123,3 +123,37 @@ test('an in flight zones query cannot erase a successful registration', async ()
     assert.deepEqual(view.state.zones, [zone]);
   } finally { await view.close(); }
 });
+
+const orderInput = { zoneId: zone.id, deliveryAddress: 'Entrega Centro', deliveryDate: '2099-10-20', deliveryTime: '14:30' };
+const persistedOrder = { ...orderInput, id: 'b0000000-0000-4000-8000-000000000001', status: 'pendiente', createdAt: zone.createdAt, updatedAt: zone.updatedAt };
+
+test('successful order registration preserves active filters and does not duplicate the new item', async () => {
+  const gateway = { getAll: async () => [], create: async () => persistedOrder };
+  const repository = { getAll: async () => [zone] };
+  const view = await mount(() => useOrders(gateway, repository));
+  try {
+    await act(async () => { view.state.setFilters({ zoneId: zone.id, deliveryDate: orderInput.deliveryDate }); });
+    await act(async () => { assert.equal(await view.state.createOrder(orderInput), true); });
+    assert.equal(view.state.orders[0].zoneName, zone.name);
+    await act(async () => { assert.equal(await view.state.createOrder(orderInput), true); });
+    assert.equal(view.state.orders.length, 1);
+    await act(async () => { view.state.clearFeedback(); });
+    assert.equal(view.state.successMessage, null);
+    await act(async () => { view.state.setFilters({ deliveryDate: '2099-10-21' }); });
+    await act(async () => { assert.equal(await view.state.createOrder(orderInput), true); });
+    assert.equal(view.state.orders.length, 0);
+  } finally { await view.close(); }
+});
+
+test('an unconfirmed order write keeps the existing list and never reports success', async () => {
+  const gateway = { getAll: async () => [persistedOrder], create: async () => { throw new Error('Consulta el listado antes de volver a registrar'); } };
+  const repository = { getAll: async () => [zone] };
+  const view = await mount(() => useOrders(gateway, repository));
+  try {
+    await act(async () => { assert.equal(await view.state.createOrder(orderInput), false); });
+    assert.equal(view.state.orders.length, 1);
+    assert.equal(view.state.successMessage, null);
+    assert.equal(view.state.isSubmitting, false);
+    assert.match(view.state.error, /Consulta el listado/);
+  } finally { await view.close(); }
+});
