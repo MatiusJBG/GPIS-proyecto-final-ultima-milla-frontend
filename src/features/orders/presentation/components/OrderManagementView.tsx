@@ -1,4 +1,4 @@
-import { useState, type FC, type FormEvent } from 'react';
+import { useState, type FC, type SubmitEvent } from 'react';
 import type { OrderGateway, OrderFilters } from '../../domain/index.js';
 import type { ZoneRepository } from '../../../zones/domain/index.js';
 import { useOrders } from '../hooks/useOrders.js';
@@ -25,7 +25,7 @@ export const OrderManagementView: FC<{ orderGateway: OrderGateway; zoneRepositor
     clearFeedback,
   } = useOrders(orderGateway, zoneRepository);
 
-  const applyFilters = (event: FormEvent<HTMLFormElement>) => {
+  const applyFilters = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     const selected: OrderFilters = {};
     if (draftFilters.deliveryDate) selected.deliveryDate = draftFilters.deliveryDate;

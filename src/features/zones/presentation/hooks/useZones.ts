@@ -21,8 +21,8 @@ export function useZones(repository: ZoneRepository) {
       updateItems(previous => [newZone, ...previous.filter(zone => zone.id !== newZone.id)]);
       setSuccessMessage(`Zona "${newZone.name}" creada exitosamente.`);
       return true;
-    } catch (failure) {
-      setWriteError(failure instanceof Error ? failure.message : 'Error al crear la zona');
+    } catch (error_) {
+      setWriteError(error_ instanceof Error ? error_.message : 'Error al crear la zona');
       return false;
     } finally { setIsCreating(false); }
   }, [registerZone, updateItems]);

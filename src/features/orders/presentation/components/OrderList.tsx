@@ -15,10 +15,10 @@ function formatDisplayDate(dateStr: string, timeStr: string): string {
 export const OrderList: FC<OrderListProps> = ({ orders, isLoading }) => {
   if (isLoading && orders.length === 0) {
     return (
-      <div className="orders-loading-container" role="status">
+      <output className="orders-loading-container">
         <Spinner size="lg" label="Cargando pedidos..." />
         <p>Consultando pedidos registrados...</p>
-      </div>
+      </output>
     );
   }
 

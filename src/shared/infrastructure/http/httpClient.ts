@@ -41,12 +41,25 @@ export class FetchHttpClient implements HttpClient {
     return `${this.baseUrl}${cleanEndpoint}`;
   }
 
+  private async readResponse<T>(response: Response): Promise<T> {
+    if (!response.ok) {
+      const text = await response.text();
+      let details: unknown = text;
+      try { details = JSON.parse(text); } catch { /* Preserve text/HTML proxy errors. */ }
+      throw new HttpError(response.status, response.statusText, details);
+    }
+    if (response.status === 204) return undefined as T;
+    return response.headers.get('content-type')?.includes('application/json')
+      ? await response.json() as T
+      : await response.text() as T;
+  }
+
   private async request<T>(endpoint: string, init: RequestOptions = {}): Promise<T> {
     const url = this.buildUrl(endpoint);
 
     const headers: Record<string, string> = {
       Accept: 'application/json',
-      ...(init.headers ?? {}),
+      ...init.headers,
     };
 
     let body = init.body;
@@ -71,28 +84,7 @@ export class FetchHttpClient implements HttpClient {
     try {
       const response = await fetch(url, fetchConfig);
 
-      if (!response.ok) {
-        const errorBody = await response.text();
-        let errorDetails: unknown = errorBody;
-        try {
-          errorDetails = JSON.parse(errorBody);
-        } catch {
-          // Preserve text/HTML proxy errors without reading the body twice.
-        }
-
-        throw new HttpError(response.status, response.statusText, errorDetails);
-      }
-
-      if (response.status === 204) {
-        return undefined as unknown as T;
-      }
-
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        return (await response.json()) as T;
-      }
-
-      return (await response.text()) as unknown as T;
+      return await this.readResponse<T>(response);
     } catch (networkError) {
       if (networkError instanceof HttpError) throw networkError;
       if ((networkError instanceof Error && networkError.name === 'TimeoutError') ||

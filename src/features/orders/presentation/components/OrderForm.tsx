@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type FC } from 'react';
+import { useState, type SubmitEvent, type FC } from 'react';
 import type { Zone } from '../../../zones/domain/index.js';
 import {
   validateOrder,
@@ -54,7 +54,7 @@ export const OrderForm: FC<OrderFormProps> = ({
     validateField(field, formData[field]);
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     setTouched({

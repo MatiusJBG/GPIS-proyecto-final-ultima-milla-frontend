@@ -14,9 +14,9 @@ export function useAsyncList<T>(load: () => Promise<T[]>) {
     try {
       const data = await load();
       if (mounted.current && request === version.current) setItems(data);
-    } catch (failure) {
+    } catch (error_) {
       if (mounted.current && request === version.current) {
-        setError(failure instanceof Error ? failure.message : 'No se pudo recuperar el listado.');
+        setError(error_ instanceof Error ? error_.message : 'No se pudo recuperar el listado.');
       }
     } finally {
       if (mounted.current && request === version.current) setIsLoading(false);

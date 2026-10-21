@@ -34,8 +34,8 @@ export function useOrders(orderGateway: OrderGateway, zoneRepository: ZoneReposi
       });
       setSuccessMessage(`Pedido para "${created.deliveryAddress}" creado exitosamente.`);
       return true;
-    } catch (failure) {
-      setWriteError(failure instanceof Error ? failure.message : 'Error al registrar el pedido');
+    } catch (error_) {
+      setWriteError(error_ instanceof Error ? error_.message : 'Error al registrar el pedido');
       return false;
     } finally { setIsSubmitting(false); }
   }, [registerOrder, zones, filters, updateItems]);

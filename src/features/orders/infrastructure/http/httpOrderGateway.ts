@@ -2,11 +2,11 @@ import { defaultHttpClient, type HttpClient } from '../../../../shared/infrastru
 import { hasMetadata, isRecord, isUuid, readItem, readItems } from '../../../../shared/infrastructure/http/response.js';
 import { validateOrder, type Order, type CreateOrderInput, type OrderFilters, type OrderGateway } from '../../domain/index.js';
 
-const statuses = ['pendiente', 'asignado_a_ruta', 'recogido', 'en_camino', 'entregado'];
+const statuses = new Set(['pendiente', 'asignado_a_ruta', 'recogido', 'en_camino', 'entregado']);
 function isOrder(value: unknown): value is Order {
   return isRecord(value) && hasMetadata(value) && isUuid(value.zoneId) &&
     typeof value.deliveryAddress === 'string' && typeof value.deliveryDate === 'string' &&
-    typeof value.deliveryTime === 'string' && typeof value.status === 'string' && statuses.includes(value.status) &&
+    typeof value.deliveryTime === 'string' && typeof value.status === 'string' && statuses.has(value.status) &&
     validateOrder({ zoneId: value.zoneId, deliveryAddress: value.deliveryAddress, deliveryDate: value.deliveryDate, deliveryTime: value.deliveryTime }).isValid;
 }
 
