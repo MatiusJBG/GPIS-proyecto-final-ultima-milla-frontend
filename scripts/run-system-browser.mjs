@@ -1,11 +1,10 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import process from 'node:process';
 import { createServer } from 'vite';
-import cypress from 'cypress';
 
 const frontend = resolve(process.env.FRONTEND_DIR);
 const backend = resolve(process.env.BACKEND_DIR);
@@ -34,10 +33,18 @@ try {
   delete process.env.ELECTRON_RUN_AS_NODE;
   web = await createServer({ root: frontend, server: { host: '127.0.0.1', port, strictPort: true, hmr: false } });
   await web.listen();
-  const results = await cypress.run({ project: frontend, configFile: resolve(frontend, 'cypress.config.mjs'),
-    browser: 'electron', headed: false, config: { baseUrl: origin }, env: { apiUrl },
-    reporter: 'junit', reporterOptions: { mochaFile: resolve(reports, 'cp-015-[hash].xml'), toConsole: true } });
-  const passed = !('failures' in results) && results.totalFailed === 0 && results.totalPassed >= 2;
+  // Keep the browser CLI isolated from the HTTP server process.
+  const status = await new Promise((done, reject) => {
+    const child = spawn(process.execPath, [resolve(frontend, 'node_modules/cypress/bin/cypress'), 'run',
+      '--project', frontend, '--config-file', resolve(frontend, 'cypress.config.mjs'), '--browser', 'electron',
+      '--config', JSON.stringify({ baseUrl: origin }), '--expose', JSON.stringify({ apiUrl }),
+      '--reporter', 'junit', '--reporter-options', JSON.stringify({ mochaFile: resolve(reports, 'cp-015-[hash].xml'), toConsole: true })],
+    { cwd: frontend, stdio: ['ignore', 'inherit', 'inherit'], env: process.env });
+    child.once('error', reject);
+    child.once('exit', code => done(code ?? 1));
+  });
+  const results = JSON.parse(readFileSync(resolve(reports, 'cypress-results.json'), 'utf8'));
+  const passed = status === 0 && !('failures' in results) && results.totalFailed === 0 && results.totalPassed >= 2;
   const evidence = { recordedAt: new Date().toISOString(), backendCommit: revision(backend), frontendCommit: revision(frontend),
     contract, postgresImage: process.env.POSTGRES_IMAGE, databaseProject: process.env.TEST_DATABASE_PROJECT,
     result: passed ? 'PASS' : 'FAIL', totalPassed: results.totalPassed ?? 0, totalFailed: results.totalFailed ?? results.failures ?? 1,

@@ -7,7 +7,7 @@ describe('CP-015: zonas y pedidos contra API y PostgreSQL reales', () => {
     const calendar = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit' });
     const deliveryDate = calendar.format(tomorrow);
     const otherDate = calendar.format(new Date(tomorrow.getTime() + 86_400_000));
-    const apiUrl = Cypress.env('apiUrl');
+    const apiUrl = Cypress.expose('apiUrl');
     cy.request(`${apiUrl}/health`).its('body.status').should('eq', 'ok');
     cy.intercept('POST', `${apiUrl}/zones`).as('createZone');
     cy.intercept('POST', `${apiUrl}/orders`).as('createOrder');
