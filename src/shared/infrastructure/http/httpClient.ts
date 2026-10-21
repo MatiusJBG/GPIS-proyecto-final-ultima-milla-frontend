@@ -25,6 +25,10 @@ export interface HttpClient {
   delete<T>(endpoint: string, options?: RequestOptions): Promise<T>;
 }
 
+function isTimeout(error: unknown): boolean {
+  return error instanceof Error && error.name === 'TimeoutError';
+}
+
 export class FetchHttpClient implements HttpClient {
   private readonly baseUrl: string;
 
@@ -87,8 +91,8 @@ export class FetchHttpClient implements HttpClient {
       return await this.readResponse<T>(response);
     } catch (networkError) {
       if (networkError instanceof HttpError) throw networkError;
-      if ((networkError instanceof Error && networkError.name === 'TimeoutError') ||
-          (fetchConfig.signal?.aborted && fetchConfig.signal.reason instanceof Error && fetchConfig.signal.reason.name === 'TimeoutError')) {
+      if (isTimeout(networkError) ||
+          (fetchConfig.signal?.aborted && isTimeout(fetchConfig.signal.reason))) {
         const uncertainWrite = init.method !== 'GET';
         const message = uncertainWrite
           ? 'No se recibió confirmación del servidor. Consulta el listado antes de volver a registrar la operación.'
