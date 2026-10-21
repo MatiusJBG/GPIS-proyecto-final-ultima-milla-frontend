@@ -136,3 +136,13 @@ for (const status of [201, 503]) {
     } finally { server.off('request', listener); }
   });
 }
+
+test('HTTP 204 completes without attempting to parse a missing JSON body', async () => {
+  reply = { status: 204, body: '' };
+  assert.equal(await client.get('/empty'), undefined);
+});
+
+test('successful non JSON responses retain their text body', async () => {
+  reply = { status: 200, type: 'text/plain', body: 'ready' };
+  assert.equal(await client.get('/text'), 'ready');
+});

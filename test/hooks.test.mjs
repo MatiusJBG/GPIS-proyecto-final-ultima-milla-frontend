@@ -203,3 +203,16 @@ test('success feedback uses a live output and its close action is accessible', a
     assert.equal(closed, true);
   } finally { await view.close(); }
 });
+
+test('an empty order form displays required-field errors without persisting an order', async () => {
+  let writes = 0;
+  const orderGateway = { getAll: async () => [], create: async () => { ++writes; return persistedOrder; } };
+  const zoneRepository = { getAll: async () => [zone] };
+  const view = await mount(() => null, () => createElement(OrderManagementView, { orderGateway, zoneRepository }));
+  try {
+    await act(async () => { view.container.querySelector('.orders-form').dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true })); });
+    assert.equal(writes, 0);
+    assert.ok(view.container.querySelectorAll('[aria-invalid="true"]').length >= 3);
+    assert.match(view.container.textContent, /dirección|Dirección/);
+  } finally { await view.close(); }
+});
