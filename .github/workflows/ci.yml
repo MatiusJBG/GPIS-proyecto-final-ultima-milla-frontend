@@ -2,7 +2,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [develop, master, main]
+    branches: [develop, main]
 permissions:
   contents: read
 concurrency:
@@ -29,3 +29,45 @@ jobs:
         run: npm run build
       - name: HTTP and DOM regressions
         run: npm test
+  system:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read pinned backend revision
+        id: backend
+        run: |
+          node --input-type=module -e "import fs from 'node:fs'; const p=JSON.parse(fs.readFileSync('.ci/integration.json')); if(!/^[0-9a-f]{40}$/.test(p.backendCommit)) throw Error('Invalid backend revision'); fs.appendFileSync(process.env.GITHUB_OUTPUT, 'repository='+p.backendRepository+'\nrevision='+p.backendCommit+'\n');"
+      - name: Require cross repository read credential
+        env:
+          REPOSITORY_TOKEN: ${{ secrets.SPRINT_REPOSITORY_TOKEN }}
+        run: test -n "$REPOSITORY_TOKEN" || { echo 'Configure SPRINT_REPOSITORY_TOKEN with read access to the private backend repository'; exit 1; }
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.backend.outputs.repository }}
+          ref: ${{ steps.backend.outputs.revision }}
+          token: ${{ secrets.SPRINT_REPOSITORY_TOKEN }}
+          path: .integration/backend
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build backend
+        working-directory: .integration/backend
+        run: npm ci && npm run build && node scripts/verify-database-artifact.mjs
+      - name: Extract canonical database package
+        run: python3 -m zipfile -e .integration/backend/.ci/database-package.zip "$RUNNER_TEMP/sprint-database"
+      - name: Cypress against real API and PostgreSQL
+        run: xvfb-run -a npm run test:e2e:system
+        env:
+          BACKEND_DIR: ${{ github.workspace }}/.integration/backend
+          BACKEND_COMMIT: ${{ steps.backend.outputs.revision }}
+          DATABASE_PACKAGE_DIR: ${{ runner.temp }}/sprint-database
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cp-015-evidence
+          path: reports/e2e
+          if-no-files-found: error

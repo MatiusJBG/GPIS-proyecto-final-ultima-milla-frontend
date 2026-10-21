@@ -13,3 +13,5 @@ cypress/downloads/
 reports/
 .scannerwork/
 .sonar/
+
+.integration/
