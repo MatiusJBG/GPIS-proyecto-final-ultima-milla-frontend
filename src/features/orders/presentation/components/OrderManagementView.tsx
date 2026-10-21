@@ -1,13 +1,13 @@
 import { useState, type FC, type SubmitEvent } from 'react';
-import type { OrderGateway, OrderFilters } from '../../domain/index.js';
-import type { ZoneRepository } from '../../../zones/domain/index.js';
+import type { OrderFilters } from '../../domain/index.js';
+import type { OrderUseCases } from '../../application/orderUseCases.js';
 import { useOrders } from '../hooks/useOrders.js';
 import { OrderForm } from './OrderForm.js';
 import { OrderList } from './OrderList.js';
 import { Alert, Button, Card } from '../../../../shared/ui/index.js';
 import '../styles/orders.css';
 
-export const OrderManagementView: FC<{ orderGateway: OrderGateway; zoneRepository: ZoneRepository }> = ({ orderGateway, zoneRepository }) => {
+export const OrderManagementView: FC<{ useCases: OrderUseCases }> = ({ useCases }) => {
   const [draftFilters, setDraftFilters] = useState({ deliveryDate: '', zoneId: '' });
   const {
     orders,
@@ -23,7 +23,7 @@ export const OrderManagementView: FC<{ orderGateway: OrderGateway; zoneRepositor
     loadOrders,
     createOrder,
     clearFeedback,
-  } = useOrders(orderGateway, zoneRepository);
+  } = useOrders(useCases);
 
   const applyFilters = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();

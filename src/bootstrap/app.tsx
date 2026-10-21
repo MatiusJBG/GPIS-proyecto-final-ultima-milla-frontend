@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { composeZoneUseCases, composeOrderUseCases } from './compose-use-cases.js';
 import { ZoneManagementView } from '../features/zones/index.js';
 import { OrderManagementView } from '../features/orders/index.js';
 
@@ -9,6 +10,9 @@ import { HttpOrderGateway } from '../features/orders/infrastructure/http/httpOrd
 const httpClient = new FetchHttpClient();
 const zoneRepository = new HttpZoneRepository(httpClient);
 const orderGateway = new HttpOrderGateway(httpClient);
+
+const zoneUseCases = composeZoneUseCases(zoneRepository);
+const orderUseCases = composeOrderUseCases(orderGateway, zoneRepository);
 
 type ActiveTab = 'zones' | 'orders';
 
@@ -47,8 +51,8 @@ export function App() {
         </button>
       </nav>
 
-      {activeTab === 'zones' && <ZoneManagementView repository={zoneRepository} />}
-      {activeTab === 'orders' && <OrderManagementView orderGateway={orderGateway} zoneRepository={zoneRepository} />}
+      {activeTab === 'zones' && <ZoneManagementView useCases={zoneUseCases} />}
+      {activeTab === 'orders' && <OrderManagementView useCases={orderUseCases} />}
     </main>
   );
 }

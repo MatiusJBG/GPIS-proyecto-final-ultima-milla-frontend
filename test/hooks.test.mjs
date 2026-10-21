@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
 import { JSDOM } from 'jsdom';
 import { createServer } from 'vite';
-import { act, createElement } from 'react';
+import { act, createElement, useMemo } from 'react';
 
 let vite;
 let dom;
@@ -33,10 +33,17 @@ before(async () => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
   ({ createRoot } = await import('react-dom/client'));
   vite = await createServer({ server: { middlewareMode: true, hmr: false }, appType: 'custom' });
-  ({ useZones } = await vite.ssrLoadModule('/src/features/zones/presentation/hooks/useZones.ts'));
-  ({ useOrders } = await vite.ssrLoadModule('/src/features/orders/presentation/hooks/useOrders.ts'));
-  ({ OrderManagementView } = await vite.ssrLoadModule('/src/features/orders/presentation/components/OrderManagementView.tsx'));
-  ({ ZoneManagementView } = await vite.ssrLoadModule('/src/features/zones/presentation/components/ZoneManagementView.tsx'));
+  let zoneModule, orderModule, zoneView, orderView;
+  ({ useZones: zoneModule } = await vite.ssrLoadModule('/src/features/zones/presentation/hooks/useZones.ts'));
+  ({ useOrders: orderModule } = await vite.ssrLoadModule('/src/features/orders/presentation/hooks/useOrders.ts'));
+  ({ OrderManagementView: orderView } = await vite.ssrLoadModule('/src/features/orders/presentation/components/OrderManagementView.tsx'));
+  ({ ZoneManagementView: zoneView } = await vite.ssrLoadModule('/src/features/zones/presentation/components/ZoneManagementView.tsx'));
+  const { composeZoneUseCases, composeOrderUseCases } = await vite.ssrLoadModule('/src/bootstrap/compose-use-cases.ts');
+  useZones = repository => zoneModule(useMemo(() => composeZoneUseCases(repository), [repository]));
+  useOrders = (gateway, repository) => orderModule(useMemo(() => composeOrderUseCases(gateway, repository), [gateway, repository]));
+  ZoneManagementView = ({ repository }) => createElement(zoneView, { useCases: useMemo(() => composeZoneUseCases(repository), [repository]) });
+  OrderManagementView = ({ orderGateway, zoneRepository }) => createElement(orderView, { useCases: useMemo(() => composeOrderUseCases(orderGateway, zoneRepository), [orderGateway, zoneRepository]) });
+
 });
 
 test('closing query feedback never turns a failed zones query into an empty success', async () => {

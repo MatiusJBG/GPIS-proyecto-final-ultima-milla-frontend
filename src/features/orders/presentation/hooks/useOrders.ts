@@ -1,18 +1,13 @@
-import { useCallback, useMemo, useState } from 'react';
-import type { ZoneRepository } from '../../../zones/domain/index.js';
-import { GetZonesUseCase } from '../../../zones/application/index.js';
-import type { OrderGateway, CreateOrderInput, OrderFilters } from '../../domain/index.js';
-import { CreateOrderUseCase, GetOrdersUseCase } from '../../application/index.js';
+import { useCallback, useState } from 'react';
+import type { CreateOrderInput, OrderFilters } from '../../domain/index.js';
+import type { OrderUseCases } from '../../application/orderUseCases.js';
 import { useAsyncList } from '../../../../shared/ui/hooks/useAsyncList.js';
 
-export function useOrders(orderGateway: OrderGateway, zoneRepository: ZoneRepository) {
+export function useOrders({ getZones, getOrders, registerOrder }: OrderUseCases) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [writeError, setWriteError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [filters, setFilters] = useState<OrderFilters>({});
-  const getZones = useMemo(() => new GetZonesUseCase(zoneRepository), [zoneRepository]);
-  const registerOrder = useMemo(() => new CreateOrderUseCase(orderGateway), [orderGateway]);
-  const getOrders = useMemo(() => new GetOrdersUseCase(orderGateway), [orderGateway]);
   const fetchZones = useCallback(() => getZones.execute(), [getZones]);
   const fetchOrders = useCallback(() => getOrders.execute(filters), [getOrders, filters]);
   const zoneList = useAsyncList(fetchZones);

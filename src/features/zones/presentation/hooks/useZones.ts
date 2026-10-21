@@ -1,14 +1,11 @@
-import { useCallback, useMemo, useState } from 'react';
-import type { ZoneRepository } from '../../domain/index.js';
-import { GetZonesUseCase, CreateZoneUseCase } from '../../application/index.js';
+import { useCallback, useState } from 'react';
+import type { ZoneUseCases } from '../../application/zoneUseCases.js';
 import { useAsyncList } from '../../../../shared/ui/hooks/useAsyncList.js';
 
-export function useZones(repository: ZoneRepository) {
+export function useZones({ getZones, registerZone }: ZoneUseCases) {
   const [isCreating, setIsCreating] = useState(false);
   const [writeError, setWriteError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const getZones = useMemo(() => new GetZonesUseCase(repository), [repository]);
-  const registerZone = useMemo(() => new CreateZoneUseCase(repository), [repository]);
   const load = useCallback(() => getZones.execute(), [getZones]);
   const { items: zones, isLoading, error: loadError, refresh: loadZones, updateItems } = useAsyncList(load);
 
