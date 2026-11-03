@@ -3,11 +3,11 @@ import type { CreateOrderInput, OrderFilters } from '../../domain/index.js';
 import type { OrderUseCases } from '../../application/orderUseCases.js';
 import { useAsyncList } from '../../../../shared/ui/hooks/useAsyncList.js';
 
-export function useOrders({ getZones, getOrders, registerOrder }: OrderUseCases) {
+export function useOrders({ getZones, getOrders, registerOrder }: OrderUseCases, initialFilters: OrderFilters = {}) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [writeError, setWriteError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [filters, setFilters] = useState<OrderFilters>({});
+  const [filters, setFilters] = useState<OrderFilters>(initialFilters);
   const fetchZones = useCallback(() => getZones.execute(), [getZones]);
   const fetchOrders = useCallback(() => getOrders.execute(filters), [getOrders, filters]);
   const zoneList = useAsyncList(fetchZones);

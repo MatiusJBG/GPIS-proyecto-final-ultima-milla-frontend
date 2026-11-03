@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { composeZoneUseCases, composeOrderUseCases } from './compose-use-cases.js';
 import { ZoneManagementView } from '../features/zones/index.js';
 import { OrderManagementView } from '../features/orders/index.js';
@@ -17,7 +17,23 @@ const orderUseCases = composeOrderUseCases(orderGateway, zoneRepository);
 type ActiveTab = 'zones' | 'orders';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('zones');
+  const readTab = (): ActiveTab => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') === 'orders' || params.has('orderId') ? 'orders' : 'zones';
+  };
+  const [activeTab, setActiveTab] = useState<ActiveTab>(readTab);
+  useEffect(() => {
+    const restore = () => setActiveTab(readTab());
+    window.addEventListener('popstate', restore);
+    return () => window.removeEventListener('popstate', restore);
+  }, []);
+  const selectTab = (tab: ActiveTab) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    if (tab === 'zones') url.searchParams.delete('orderId');
+    if (url.protocol === 'http:' || url.protocol === 'https:') window.history.pushState({}, '', url);
+    setActiveTab(tab);
+  };
 
   return (
     <main className="app-shell">
@@ -36,7 +52,7 @@ export function App() {
           role="tab"
           aria-selected={activeTab === 'zones'}
           className={`app-nav__tab ${activeTab === 'zones' ? 'app-nav__tab--active' : ''}`}
-          onClick={() => setActiveTab('zones')}
+          onClick={() => selectTab('zones')}
         >
           Zonas de Entrega
         </button>
@@ -45,7 +61,7 @@ export function App() {
           role="tab"
           aria-selected={activeTab === 'orders'}
           className={`app-nav__tab ${activeTab === 'orders' ? 'app-nav__tab--active' : ''}`}
-          onClick={() => setActiveTab('orders')}
+          onClick={() => selectTab('orders')}
         >
           Pedidos (HU-PED-01)
         </button>

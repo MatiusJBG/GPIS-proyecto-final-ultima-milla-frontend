@@ -1,4 +1,5 @@
 import { defaultHttpClient, type HttpClient } from '../../../../shared/infrastructure/http/index.js';
+import { HttpError } from '../../../../shared/infrastructure/http/httpClient.js';
 import { hasMetadata, isRecord, isUuid, readItem, readItems } from '../../../../shared/infrastructure/http/response.js';
 import { validateOrder, type Order, type CreateOrderInput, type OrderFilters, type OrderGateway } from '../../domain/index.js';
 
@@ -12,6 +13,15 @@ function isOrder(value: unknown): value is Order {
 
 export class HttpOrderGateway implements OrderGateway {
   constructor(private readonly httpClient: HttpClient = defaultHttpClient) {}
+
+  async getById(id: string): Promise<Order | null> {
+    try {
+      return readItem(await this.httpClient.get<unknown>(`/orders/${encodeURIComponent(id)}`), isOrder);
+    } catch (error) {
+      if (error instanceof HttpError && error.status === 404) return null;
+      throw error;
+    }
+  }
 
   async create(input: CreateOrderInput): Promise<Order> {
     const { zoneId, deliveryAddress, deliveryDate, deliveryTime } = input;
