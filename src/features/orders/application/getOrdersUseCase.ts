@@ -1,9 +1,9 @@
-import type { Order, OrderGateway } from '../domain/index.js';
+import type { Order, OrderGateway, OrderFilters } from '../domain/index.js';
 
 export class GetOrdersUseCase {
   constructor(private readonly orderGateway: OrderGateway) {}
 
-  public execute(): Promise<Order[]> {
-    return this.orderGateway.getAll();
+  public execute(filters?: OrderFilters): Promise<Order[]> {
+    return this.orderGateway.getAll(filters);
   }
 }

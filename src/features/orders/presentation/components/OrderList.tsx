@@ -5,6 +5,7 @@ import { EmptyState, Spinner } from '../../../../shared/ui/index.js';
 export interface OrderListProps {
   orders: Order[];
   isLoading: boolean;
+  onSelect?: (id: string) => void;
 }
 
 function formatDisplayDate(dateStr: string, timeStr: string): string {
@@ -12,13 +13,13 @@ function formatDisplayDate(dateStr: string, timeStr: string): string {
   return `${dateStr} a las ${timeStr || '00:00'}`;
 }
 
-export const OrderList: FC<OrderListProps> = ({ orders, isLoading }) => {
+export const OrderList: FC<OrderListProps> = ({ orders, isLoading, onSelect }) => {
   if (isLoading && orders.length === 0) {
     return (
-      <div className="orders-loading-container" role="status">
+      <output className="orders-loading-container">
         <Spinner size="lg" label="Cargando pedidos..." />
         <p>Consultando pedidos registrados...</p>
-      </div>
+      </output>
     );
   }
 
@@ -40,6 +41,7 @@ export const OrderList: FC<OrderListProps> = ({ orders, isLoading }) => {
             <th scope="col">Zona</th>
             <th scope="col">Programación</th>
             <th scope="col">Estado</th>
+            {onSelect && <th scope="col">Detalle</th>}
           </tr>
         </thead>
         <tbody>
@@ -59,6 +61,7 @@ export const OrderList: FC<OrderListProps> = ({ orders, isLoading }) => {
                     {order.status || 'pendiente'}
                   </span>
                 </td>
+                {onSelect && <td><button type="button" onClick={() => onSelect(order.id)} aria-label={`Ver detalle del pedido ${order.id}`}>Ver detalle</button></td>}
               </tr>
             );
           })}
